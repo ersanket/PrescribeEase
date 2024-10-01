@@ -1,0 +1,68 @@
+<?php
+require_once('vendor/autoload.php');
+
+// Database connection
+$servername = "localhost";
+$username = "doctor_user";
+$password = "password";
+$dbname = "doctor_portal";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+$name = $_POST['name'];
+$age = $_POST['age'];
+$gender = $_POST['gender'];
+$contact = $_POST['contact'];
+$template = $_POST['template'];
+$content = $_POST['content'];
+
+// Insert patient details
+$sql = "INSERT INTO patients (name, age, gender, contact) VALUES ('$name', $age, '$gender', '$contact')";
+if ($conn->query($sql) === TRUE) {
+    $patient_id = $conn->insert_id;
+} else {
+    die("Error: " . $sql . "<br>" . $conn->error);
+}
+
+// Insert template content
+$sql = "INSERT INTO templates (patient_id, template_type, content) VALUES ($patient_id, '$template', '$content')";
+if ($conn->query($sql) !== TRUE) {
+    die("Error: " . $sql . "<br>" . $conn->error);
+}
+
+$conn->close();
+
+// Generate PDF
+$pdf = new TCPDF();
+$pdf->AddPage();
+$pdf->SetFont('helvetica', '', 12);
+
+// Add letterhead
+$pdf->SetFont('helvetica', 'B', 16);
+$pdf->Cell(0, 10, 'Dr. John Doe', 0, 1, 'C');
+$pdf->SetFont('helvetica', '', 12);
+$pdf->Cell(0, 10, 'HealthCare Clinic', 0, 1, 'C');
+$pdf->Cell(0, 10, '123 Health St, Wellness City, 45678', 0, 1, 'C');
+$pdf->Cell(0, 10, 'Contact: (123) 456-7890 | Email: johndoe@healthcareclinic.com', 0, 1, 'C');
+$pdf->Ln(10); // Add some space
+
+// Add template content
+if ($template == 'eprescription') {
+    $pdf->Write(0, 'E-Prescription');
+} elseif ($template == 'medicalcertificate') {
+    $pdf->Write(0, 'Medical Certificate');
+} elseif ($template == 'medicinedetails') {
+    $pdf->Write(0, 'Medicine Details');
+} elseif ($template == 'patientdetails') {
+    $pdf->Write(0, 'Patient Details');
+}
+
+$pdf->Ln();
+$pdf->Write(0, $content);
+$pdf->Output('document.pdf', 'D');
+?>
+
